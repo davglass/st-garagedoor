@@ -32,7 +32,7 @@ preferences {
         input "timeToCheck", "time", title: "(Optional)", required: false
     }
     section("Which door should I check?"){
-        input "door", "capability.contactSensor", title: "Which?", multiple: false, required: true
+        input "door", "capability.doorControl", title: "Which?", multiple: false, required: true
     }
 }
 
@@ -73,8 +73,15 @@ def checkDoor() {
     if (door.currentContact == "open") {
         def msg = "${door.displayName} was left open!"
         log.info msg
-        sendPush(msg)
+        closeDoor();
     } else {
         log.debug "It wasn't open."
+    }
+}
+
+private closeDoor() {
+    if (door.currentContact == "open") {
+        log.debug "closing door"
+        door.close()
     }
 }
