@@ -1,5 +1,5 @@
 /**
- *  Is It Closed?
+ *  Is It Open?
  *
  *  Copyright 2014 Greg Bronzert
  *
@@ -14,10 +14,10 @@
  *
  */
 definition(
-    name: "Is It Closed?",
+    name: "Is It Open?",
     namespace: "gbknet",
     author: "Greg Bronzert",
-    description: "Check whether door is closed after a mode change or specific time.",
+    description: "Check whether door is closed after a mode change and open it.",
     category: "Convenience",
     iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
     iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png"
@@ -25,14 +25,14 @@ definition(
 
 
 preferences {
-    section("Which mode changes trigger the check?") {
-        input "newMode", "mode", title: "Which?", multiple: true, required: false
+    section("Which mode change triggers the check?") {
+        input "newMode", "mode", title: "Which?", multiple: true, required: true
     }
-    section("When should I check? (once per day)") {
-        input "timeToCheck", "time", title: "(Optional)", required: false
+    section("Which door should I open?"){
+        input "door", "capability.doorControl", title: "Which Door?", multiple: false, required: true
     }
-    section("Which door should I check?"){
-        input "door", "capability.doorControl", title: "Which?", multiple: false, required: true
+    section("But only if it's from this mode:") {
+        input "fromMode", "mode", title: "Which?", multiple: false, required: true
     }
 }
 
@@ -54,37 +54,41 @@ def initialize() {
     if (newMode != null) {
         subscribe(location, modeChangeHandler)
     }
-    if (timeToCheck != null) {
-        schedule(timeToCheck, checkDoor)
-    }
 }
 
-def modeChangeHandler(evt) {
-    log.debug "Mode change to: ${evt.value}"
 
-    // Have to handle when they select one mode or multiple
-    if (newMode.any{ it == evt.value } || newMode == evt.value) {
-        checkDoor()
+def modeChangeHandler(evt) {
+    log.debug "Mode change to: ${evt.value} from ${state.lastMode}"
+
+    if (state.lastMode == fromMode) {
+        if (newMode.any{ it == evt.value } || newMode == evt.value) {
+            checkDoor()
+        }
     }
+        
+    if (!state.lastMode) {
+        state.lastMode = evt.value
+    }
+    log.trace state
 }
 
 def checkDoor() {
     log.debug "Door ${door.displayName} is ${door.currentContact}"
-    if (door.currentContact == "open") {
-        def msg = "${door.displayName} was left open, closing it!"
+    if (door.currentContact == "closed") {
+        def msg = "${door.displayName} is closed, opening it!"
         log.info msg
         sendNotificationEvent(msg)
-        closeDoor();
+        openDoor();
     } else {
-        def msg = "${door.displayName} was not open, we are good."
+        def msg = "${door.displayName} was already open, we are good."
         log.debug msg
         sendNotificationEvent(msg)
     }
 }
 
-private closeDoor() {
-    if (door.currentContact == "open") {
-        log.debug "closing door"
-        door.close()
+private openDoor() {
+    if (door.currentContact == "closed") {
+        log.debug "opening door"
+        door.open()
     }
 }
