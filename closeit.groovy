@@ -76,7 +76,7 @@ def checkDoor(door) {
         def msg = "${door.displayName} was left open, closing it!"
         log.info msg
         sendNotificationEvent(msg)
-        closeDoor();
+        closeDoor(door);
     } else {
         def msg = "${door.displayName} was not open, we are good."
         log.debug msg
@@ -84,7 +84,7 @@ def checkDoor(door) {
     }
 }
 
-private closeDoor() {
+private closeDoor(door) {
     if (door.currentContact == "open") {
         log.debug "closing door"
         door.close()
