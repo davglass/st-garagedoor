@@ -31,8 +31,8 @@ preferences {
     section("When should I check? (once per day)") {
         input "timeToCheck", "time", title: "(Optional)", required: false
     }
-    section("Which door should I check?"){
-        input "door", "capability.doorControl", title: "Which?", multiple: false, required: true
+    section("Which doors should I check?"){
+        input "doors", "capability.doorControl", title: "Which?", multiple: true, required: true
     }
 }
 
@@ -62,13 +62,15 @@ def initialize() {
 def modeChangeHandler(evt) {
     log.debug "Mode change to: ${evt.value}"
 
-    // Have to handle when they select one mode or multiple
-    if (newMode.any{ it == evt.value } || newMode == evt.value) {
-        checkDoor()
+    doors.each {
+        if (newMode.any{ it == evt.value } || newMode == evt.value) {
+            checkDoor(it)
+        }
     }
+    
 }
 
-def checkDoor() {
+def checkDoor(door) {
     log.debug "Door ${door.displayName} is ${door.currentContact}"
     if (door.currentContact == "open") {
         def msg = "${door.displayName} was left open, closing it!"
