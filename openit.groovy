@@ -28,8 +28,8 @@ preferences {
     section("Which mode change triggers the check?") {
         input "newMode", "mode", title: "Which?", multiple: true, required: true
     }
-    section("Which door should I open?"){
-        input "door", "capability.doorControl", title: "Which Door?", multiple: false, required: true
+    section("Which doors should I open?"){
+        input "doors", "capability.doorControl", title: "Which Door?", multiple: true, required: true
     }
     section("But only if it's from this mode:") {
         input "fromMode", "mode", title: "Which?", multiple: false, required: true
@@ -51,9 +51,8 @@ def updated() {
 }
 
 def initialize() {
-    if (newMode != null) {
-        subscribe(location, modeChangeHandler)
-    }
+    subscribe(location, modeChangeHandler)
+    state.lastMode = location.mode
 }
 
 
@@ -61,8 +60,10 @@ def modeChangeHandler(evt) {
     log.debug "Mode change to: ${evt.value} from ${state.lastMode}"
 
     if (state.lastMode == fromMode) {
-        if (newMode.any{ it == evt.value } || newMode == evt.value) {
-            checkDoor()
+        doors.each {
+            if (newMode.any{ it == evt.value } || newMode == evt.value) {
+                checkDoor(it)
+            }
         }
     }
         
@@ -70,7 +71,7 @@ def modeChangeHandler(evt) {
     log.trace "Settings lastMode to: ${state.lastMode}"
 }
 
-def checkDoor() {
+def checkDoor(door) {
     log.debug "Door ${door.displayName} is ${door.currentContact}"
     if (door.currentContact == "closed") {
         def msg = "${door.displayName} is closed, opening it!"
