@@ -66,10 +66,8 @@ def modeChangeHandler(evt) {
         }
     }
         
-    if (!state.lastMode) {
-        state.lastMode = evt.value
-    }
-    log.trace state
+    state.lastMode = evt.value
+    log.trace "Settings lastMode to: ${state.lastMode}"
 }
 
 def checkDoor() {
